@@ -1,0 +1,6 @@
+
+def entropyD(x):
+
+
+
+    return;

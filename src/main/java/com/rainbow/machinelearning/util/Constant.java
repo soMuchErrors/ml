@@ -1,5 +1,8 @@
 package com.rainbow.machinelearning.util;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author ${xiami}
  * @version $Id: Constant.java, v 0.1 2019年05月09日 15:42 Exp $
@@ -23,5 +26,14 @@ public class Constant {
          */
         String deadRoutingKey = "dead_routing_key";
         String deadExchangeName = "dead_exchange";
+    }
+
+    public static Map<String, String> APP_CLASS = new HashMap<>();
+    {
+        APP_CLASS.put("购物优惠","1");
+        APP_CLASS.put("地图旅游","2");
+        APP_CLASS.put("教育学习","3");
+        APP_CLASS.put("金融理财","4");
+        APP_CLASS.put("游戏娱乐","5");
     }
 }

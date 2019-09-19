@@ -1,10 +1,12 @@
 package com.rainbow.machinelearning;
 
 import com.alibaba.fastjson.JSONObject;
+import com.rainbow.machinelearning.dto.AppDto;
 import com.rainbow.machinelearning.dto.CheckIn;
 import com.rainbow.machinelearning.dto.CheckInObject;
 import com.rainbow.machinelearning.model.User;
 import com.rainbow.machinelearning.service.UserService;
+import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.mllib.linalg.Matrix;
@@ -12,6 +14,7 @@ import org.apache.spark.mllib.linalg.Vector;
 import org.apache.spark.mllib.linalg.Vectors;
 import org.apache.spark.mllib.stat.MultivariateStatisticalSummary;
 import org.apache.spark.mllib.stat.Statistics;
+import org.apache.spark.sql.SQLContext;
 import org.assertj.core.util.Lists;
 import org.assertj.core.util.Sets;
 import org.junit.Test;
@@ -21,10 +24,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import scala.Tuple2;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
 
 
 @RunWith(SpringRunner.class)
@@ -82,7 +83,7 @@ public class MachineLearningApplicationTests {
 					c1.getLocation().addAll(c2.getLocation());
 					return c1;
 				}
-		).map(t -> Vectors.dense(t._2.getI().doubleValue(), t._2.getTime().size(), t._2.getLocation().size()));
+		).map(t -> Vectors.dense(t._2.getI().doubleValue(), t._2.getTime().size(), (double)t._2.getLocation().size()));
 
 //		vector.coalesce(1).saveAsTextFile("src/main/resources/data1.txt");
 
@@ -94,6 +95,27 @@ public class MachineLearningApplicationTests {
 
 		Matrix correlMatrix = Statistics.corr(vector.rdd(), "pearson");
 		System.out.println("correlMatrix:" + correlMatrix.toString());
+	}
+
+	@Test
+	public void classificationTest(){
+//		SQLContext sqlContext = new SQLContext(javaSparkContext);
+//
+//		 sqlContext.read().textFile("/Downloads/book2-master/2rd_data/ch02/Gowalla_totalCheckins.txt")
+
+		JavaPairRDD<String, Set<String>> javaRDD =  javaSparkContext.textFile("/Downloads/book2-master/2rd_data/ch02/Gowalla_totalCheckins.txt")
+				.map(line -> line.split("~"))
+				.map(s -> new AppDto(s[0],s[1],s[2],s[3],s[4]))
+				.mapToPair(app -> {
+					Set<String> setIntro = Arrays.stream(app.getIntroduction().split(" "))
+							.map(s -> s.split("/"))
+							.filter(ss -> ss[0].length()>1 && (ss[1].equals("v") || ss[1].indexOf("n")>-1))
+							.map(ss -> ss[0]).collect(Collectors.toSet());
+
+					return new Tuple2<>(app.getCls(), setIntro);
+				});
+
+		javaRDD.map(t -> t._2).zipWithIndex();
 	}
 }
 
